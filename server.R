@@ -4,19 +4,22 @@ library(scholar)
 library(dplyr)
 library(plotly)
 
+httr::set_config(httr::config(http_version = 0))
+
 journal_df <- read.csv("./data/journal-disc.csv")
 
 shinyServer(function(input, output) {
   
   pub_df <- reactive({
-    scholar_id <- "riuFKDkAAAAJ"
-    
-    scholar_dat <- if(scholar_id == "riuFKDkAAAAJ") {
+    scholar_dat <- if(input[["scholar_id"]] == "riuFKDkAAAAJ") {
       load("./data/michal_dat.RData")
       michal_dat
     } else {
-      get_publications(scholar_id, pagesize = 100)
+      get_publications(input[["scholar_id"]], pagesize = 100)
     }
+    
+    #if(input[["scholar_id"]] != "riuFKDkAAAAJ")
+    #  browser()
 
     scholar_df <- scholar_dat %>% 
       select(title, journal) %>%
@@ -27,7 +30,7 @@ shinyServer(function(input, output) {
       droplevels() %>% 
       rename(journal_scholar = journal) 
     
-    journal_vec <- levels(scholar_df[["journal_scholar"]])
+    journal_vec <- unique(scholar_df[["journal_scholar"]])
     journal_all_vec <- levels(journal_df[["journal"]])
     
     all_distances <- adist(journal_vec, journal_all_vec, ignore.case = TRUE, partial = FALSE,
@@ -69,7 +72,8 @@ shinyServer(function(input, output) {
       scale_y_continuous("Liczba publikacji") +
       #scale_fill_discrete(guide = FALSE) +
       coord_flip() +
-      theme_bw(base_size = 15) 
+      theme_bw(base_size = 15) +
+      theme(legend.position = "bottom")
   })
   
   pub_table_r <- reactive({
