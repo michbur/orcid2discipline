@@ -26,21 +26,3 @@ matched_journal <- lapply(journal_vec, function(ith_pub) {
 })
 
 
-disc_order <- pub_df %>% 
-  group_by(disc) %>% 
-  summarise(n = length(disc)) %>% 
-  arrange(n) %>% 
-  pull(disc)
-
-pub_df %>% 
-  group_by(disc, journal.y) %>% 
-  summarise(n = length(disc)) %>% 
-  ungroup() %>% 
-  na.omit() %>% 
-  mutate(disc = factor(disc, levels =  disc_order)) %>% 
-  ggplot(aes(x = disc, y = n, fill = journal.y)) +
-  geom_col() +
-  scale_x_discrete("Dyscyplina") +
-  scale_y_continuous("Liczba publikacji") +
-  coord_flip() +
-  theme_bw(base_size = 11)
