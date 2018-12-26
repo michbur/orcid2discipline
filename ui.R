@@ -1,5 +1,7 @@
 library(shiny)
 library(DT)
+library(shinycssloaders)
+library(plotly)
 
 shinyUI(fluidPage(
   
@@ -16,7 +18,8 @@ shinyUI(fluidPage(
     ),
     
     mainPanel(
-      DT::dataTableOutput("pub-table"),
+      DT::dataTableOutput("pub-table") %>% 
+        withSpinner(color="#0dc5c1"),
       #plotOutput("pub-plot", height = 1200)),
       uiOutput("pub-plot-panel")
     )
