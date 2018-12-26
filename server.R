@@ -64,16 +64,29 @@ shinyServer(function(input, output) {
       mutate(disc = factor(disc, levels =  disc_order))
   })
   
-  output[["pub-plot"]] <- renderPlot({
-    plot_df()  %>% 
-      ggplot(aes(x = disc, y = n, fill = journal_list)) +
-      geom_col() +
-      scale_x_discrete("Dyscyplina") +
-      scale_y_continuous("Liczba publikacji") +
-      #scale_fill_discrete(guide = FALSE) +
-      coord_flip() +
-      theme_bw(base_size = 15) +
-      theme(legend.position = "bottom")
+  output[["pub-plot"]] <- renderPlotly({
+    p <- if(input[["show_journals"]]) {
+      plot_df()  %>% 
+        ggplot(aes(x = disc, y = n, fill = journal_list)) +
+        geom_col() +
+        scale_x_discrete("Dyscyplina") +
+        scale_y_continuous("Liczba publikacji") +
+        coord_flip() +
+        theme_bw(base_size = 15) +
+        theme(legend.position = "none")
+    } else {
+      plot_df()  %>% 
+        group_by(disc) %>% 
+        summarise(n = sum(n)) %>% 
+        ggplot(aes(x = disc, y = n)) +
+        geom_col() +
+        scale_x_discrete("Dyscyplina") +
+        scale_y_continuous("Liczba publikacji") +
+        coord_flip() +
+        theme_bw(base_size = 15) 
+    }
+    
+    ggplotly(p)
   })
   
   pub_table_r <- reactive({
@@ -87,7 +100,7 @@ shinyServer(function(input, output) {
   })
   
   output[["pub-plot-panel"]] <- renderUI(
-    plotOutput("pub-plot", height = 400 + length(unique(pub_df()[["disc"]])) * 30)
+    plotlyOutput("pub-plot", height = paste0(400 + length(unique(pub_df()[["disc"]])) * 30, "px"))
   )
   
 })

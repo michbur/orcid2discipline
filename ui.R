@@ -9,7 +9,10 @@ shinyUI(fluidPage(
     sidebarPanel(
       textInput("scholar_id",
                 "ID w Google Scholar:", 
-                value = "riuFKDkAAAAJ")
+                value = "riuFKDkAAAAJ"),
+      checkboxInput("show_journals",
+                    "Pokaż wkład poszczególnych czasopism do dyscyplin",
+                    value = FALSE)
     ),
     
     mainPanel(
