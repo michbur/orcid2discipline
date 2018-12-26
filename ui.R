@@ -14,7 +14,7 @@ shinyUI(fluidPage(
     
     mainPanel(
       DT::dataTableOutput("pub-table"),
-      #plotOutput("pub-plot")
+      #plotOutput("pub-plot", height = 1200)),
       uiOutput("pub-plot-panel")
     )
   )
