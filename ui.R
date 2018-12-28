@@ -27,7 +27,7 @@ shinyUI(fluidPage(
                  uiOutput("pub-plot-panel") %>% withSpinner(color="#0dc5c1")
         ),
         tabPanel("Publikacje w dyscyplinach",
-                 plotlyOutput("disc-plot", height = "900px")
+                 plotOutput("disc-plot", height = 2800)
         )
       )
     )

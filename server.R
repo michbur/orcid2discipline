@@ -61,7 +61,7 @@ shinyServer(function(input, output) {
       summarise(n = length(disc)) %>% 
       arrange(n) %>% 
       pull(disc)
-    
+
     pub_df() %>% 
       mutate(disc = factor(disc, levels =  disc_order),
              year = factor(year, levels = sort(unique(year), decreasing = TRUE)))
@@ -86,14 +86,15 @@ shinyServer(function(input, output) {
     ggplotly(p)
   })
   
-  output[["disc-plot"]] <- renderPlotly({
-    p <- pub_df() %>% 
-      ggplot(aes(x = year, fill = disc)) +
-      geom_bar(position = "dodge") +
-      coord_flip() +
-      theme_bw()
-    
-    ggplotly(p)
+  output[["disc-plot"]] <- renderPlot({
+    ggplot(pub_df(), aes(x = year)) +
+      geom_bar() +
+      scale_x_continuous("Rok") +
+      scale_y_continuous("Liczba publikacji") +
+      theme_bw() +
+      facet_wrap(~ disc, ncol = 2) +
+      theme_bw(base_size = 15)
+
   })
   
   pub_table_r <- reactive({
