@@ -11,7 +11,7 @@ journal_df <- read.csv("./data/journal-disc.csv")
 
 shinyServer(function(input, output) {
   
-  pub_df <- reactive({
+  pub_raw_df <- reactive({
     scholar_dat <- if(input[["scholar_id"]] == "riuFKDkAAAAJ") {
       load("./data/michal_dat.RData")
       michal_dat
@@ -45,67 +45,74 @@ shinyServer(function(input, output) {
       inner_join(journal_df, by = c("journal_list" = "journal"))
   })
   
-  plot_df <- reactive({
+  pub_df <- reactive({
     wrongly_annotated <- if(!is.null(input[["pub-table_rows_selected"]])) {
       pub_table_r()[input[["pub-table_rows_selected"]], "journal_db", drop = TRUE]
     } else {
       NULL
     }
     
-    disc_order <- pub_df() %>%
-      filter(!(journal_db %in% wrongly_annotated)) %>% 
+    filter(pub_raw_df(), !(journal_db %in% wrongly_annotated))
+  })
+  
+  plot_df <- reactive({
+    disc_order <- pub_df() %>% 
       group_by(disc) %>% 
       summarise(n = length(disc)) %>% 
       arrange(n) %>% 
       pull(disc)
     
     pub_df() %>% 
-      filter(!(journal_db %in% wrongly_annotated)) %>% 
-      group_by(disc, journal_list) %>% 
-      summarise(n = length(disc)) %>% 
-      ungroup() %>% 
-      na.omit() %>% 
-      mutate(disc = factor(disc, levels =  disc_order))
+      mutate(disc = factor(disc, levels =  disc_order),
+             year = factor(year, levels = sort(unique(year), decreasing = TRUE)))
   })
   
   output[["pub-plot"]] <- renderPlotly({
-    p <- if(input[["show_journals"]]) {
-      plot_df()  %>% 
-        ggplot(aes(x = disc, y = n, fill = journal_list)) +
-        geom_col() +
-        scale_x_discrete("Dyscyplina") +
-        scale_y_continuous("Liczba publikacji") +
-        coord_flip() +
-        theme_bw(base_size = 15) +
-        theme(legend.position = "none")
+
+    main_layer <- if(input[["show_journals"]]) {
+      geom_bar(aes(x = disc, fill = journal_list))
     } else {
-      plot_df()  %>% 
-        group_by(disc) %>% 
-        summarise(n = sum(n)) %>% 
-        ggplot(aes(x = disc, y = n)) +
-        geom_col() +
-        scale_x_discrete("Dyscyplina") +
-        scale_y_continuous("Liczba publikacji") +
-        coord_flip() +
-        theme_bw(base_size = 15) 
+      geom_bar(aes(x = disc))
     }
+
+    p <- ggplot(plot_df()) +
+      main_layer +
+      scale_x_discrete("Dyscyplina") +
+      scale_y_continuous("Liczba publikacji") +
+      coord_flip() +
+      theme_bw(base_size = 15) +
+      theme(legend.position = "none")
+    
+    ggplotly(p)
+  })
+  
+  output[["disc-plot"]] <- renderPlotly({
+    p <- pub_df() %>% 
+      ggplot(aes(x = year, fill = disc)) +
+      geom_bar(position = "dodge") +
+      coord_flip() +
+      theme_bw()
     
     ggplotly(p)
   })
   
   pub_table_r <- reactive({
-    pub_df() %>% 
+    pub_raw_df() %>% 
       select(title, journal_db, journal_list, distance) %>% 
       unique() %>% 
       arrange(desc(distance))
   })
   
-  output[["pub-table"]] <- DT::renderDataTable({
-     datatable(pub_table_r())
-  })
-  
-  output[["pub-plot-panel"]] <- renderUI(
-    plotlyOutput("pub-plot", height = paste0(400 + length(unique(pub_df()[["disc"]])) * 30, "px"))
+  output[["pub-table"]] <- DT::renderDataTable(
+     datatable(pub_table_r(), style = "bootstrap", filter = "top", 
+               extensions = "Buttons",
+               options = list(pageLength = 50, dom = "Brtip",
+                              buttons = c("copy", "csv", "excel", "print")))
   )
+  
+  output[["pub-plot-panel"]] <- renderUI({
+    plot_height <- 400 + length(unique(pub_df()[["disc"]])) * 30 
+    plotlyOutput("pub-plot", height = paste0(plot_height, "px"))
+  })
   
 })
