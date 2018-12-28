@@ -3,6 +3,7 @@ library(DT)
 library(scholar)
 library(dplyr)
 library(plotly)
+library(stringdist)
 
 httr::set_config(httr::config(http_version = 0))
 
@@ -22,41 +23,44 @@ shinyServer(function(input, output) {
     #  browser()
 
     scholar_df <- scholar_dat %>% 
-      select(title, journal) %>%
+      select(title, journal, year) %>%
       unique() %>% 
       filter(journal != "") %>%
-      group_by(title) %>% 
+      group_by(title, year) %>% 
       summarise(journal = first(journal)) %>%
+      ungroup() %>% 
       droplevels() %>% 
-      rename(journal_scholar = journal) 
+      rename(journal_db = journal)
     
-    journal_vec <- unique(scholar_df[["journal_scholar"]])
+    journal_vec <- unique(scholar_df[["journal_db"]])
     journal_all_vec <- levels(journal_df[["journal"]])
     
-    all_distances <- adist(journal_vec, journal_all_vec, ignore.case = TRUE, partial = FALSE,
-                           costs = c(insertions = 10, deletions = 4, substitutions = 10))
+    all_distances <- stringdistmatrix(a = tolower(journal_vec), b = tolower(journal_all_vec),
+                                      method = "jaccard", q = 5)
     
-    data.frame(journal_scholar = journal_vec, journal_list = journal_all_vec[apply(all_distances, 1, which.min)]) %>% 
-      inner_join(scholar_df, ., by = c("journal_scholar" = "journal_scholar")) %>% 
+    data.frame(journal_db = journal_vec, 
+               journal_list = journal_all_vec[apply(all_distances, 1, which.min)],
+               distance = apply(all_distances, 1, min)) %>% 
+      inner_join(scholar_df, ., by = c("journal_db" = "journal_db")) %>% 
       inner_join(journal_df, by = c("journal_list" = "journal"))
   })
   
   plot_df <- reactive({
     wrongly_annotated <- if(!is.null(input[["pub-table_rows_selected"]])) {
-      pub_table_r()[input[["pub-table_rows_selected"]], "journal_scholar", drop = TRUE]
+      pub_table_r()[input[["pub-table_rows_selected"]], "journal_db", drop = TRUE]
     } else {
       NULL
     }
     
     disc_order <- pub_df() %>%
-      filter(!(journal_scholar %in% wrongly_annotated)) %>% 
+      filter(!(journal_db %in% wrongly_annotated)) %>% 
       group_by(disc) %>% 
       summarise(n = length(disc)) %>% 
       arrange(n) %>% 
       pull(disc)
     
     pub_df() %>% 
-      filter(!(journal_scholar %in% wrongly_annotated)) %>% 
+      filter(!(journal_db %in% wrongly_annotated)) %>% 
       group_by(disc, journal_list) %>% 
       summarise(n = length(disc)) %>% 
       ungroup() %>% 
@@ -91,8 +95,9 @@ shinyServer(function(input, output) {
   
   pub_table_r <- reactive({
     pub_df() %>% 
-      select(title, journal_scholar, journal_list) %>% 
-      unique()
+      select(title, journal_db, journal_list, distance) %>% 
+      unique() %>% 
+      arrange(desc(distance))
   })
   
   output[["pub-table"]] <- DT::renderDataTable({
