@@ -55,6 +55,25 @@ shinyServer(function(input, output) {
     filter(pub_raw_df(), !(journal_db %in% wrongly_annotated))
   })
   
+  # Przypisanie czasopism ----------------------------------------
+  
+  pub_table_r <- reactive({
+    pub_raw_df() %>% 
+      select(title, journal_db, journal_list, distance) %>% 
+      unique() %>% 
+      arrange(desc(distance))
+  })
+  
+  output[["pub-table"]] <- DT::renderDataTable(
+    datatable(pub_table_r(), style = "bootstrap", filter = "top", 
+              extensions = "Buttons",
+              options = list(pageLength = 50, dom = "Brtip",
+                             buttons = c("copy", "csv", "excel", "print")))
+  )
+  
+  
+  # czasopisma i dyscypliny ---------------------------------------------
+  
   plot_df <- reactive({
     disc_order <- pub_df() %>% 
       group_by(disc) %>% 
@@ -86,6 +105,13 @@ shinyServer(function(input, output) {
     ggplotly(p)
   })
   
+  output[["pub-plot-panel"]] <- renderUI({
+    plot_height <- 400 + length(unique(pub_df()[["disc"]])) * 30 
+    plotlyOutput("pub-plot", height = paste0(plot_height, "px"))
+  })
+  
+  # dyscyplina na rok ------------------
+  
   output[["disc-plot"]] <- renderPlot({
     ggplot(pub_df(), aes(x = year)) +
       geom_bar() +
@@ -97,23 +123,6 @@ shinyServer(function(input, output) {
 
   })
   
-  pub_table_r <- reactive({
-    pub_raw_df() %>% 
-      select(title, journal_db, journal_list, distance) %>% 
-      unique() %>% 
-      arrange(desc(distance))
-  })
   
-  output[["pub-table"]] <- DT::renderDataTable(
-     datatable(pub_table_r(), style = "bootstrap", filter = "top", 
-               extensions = "Buttons",
-               options = list(pageLength = 50, dom = "Brtip",
-                              buttons = c("copy", "csv", "excel", "print")))
-  )
-  
-  output[["pub-plot-panel"]] <- renderUI({
-    plot_height <- 400 + length(unique(pub_df()[["disc"]])) * 30 
-    plotlyOutput("pub-plot", height = paste0(plot_height, "px"))
-  })
   
 })
