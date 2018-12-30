@@ -9,7 +9,8 @@ httr::set_config(httr::config(http_version = 0))
 
 journal_df <- read.csv("./data/journal-disc.csv")
 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
+  
   
   pub_raw_df <- reactive({
     scholar_dat <- if(input[["scholar_id"]] == "riuFKDkAAAAJ") {
@@ -21,7 +22,7 @@ shinyServer(function(input, output) {
     
     #if(input[["scholar_id"]] != "riuFKDkAAAAJ")
     #  browser()
-
+    
     scholar_df <- scholar_dat %>% 
       select(title, journal, year) %>%
       unique() %>% 
@@ -80,20 +81,20 @@ shinyServer(function(input, output) {
       summarise(n = length(disc)) %>% 
       arrange(n) %>% 
       pull(disc)
-
+    
     pub_df() %>% 
       mutate(disc = factor(disc, levels =  disc_order),
              year = factor(year, levels = sort(unique(year), decreasing = TRUE)))
   })
   
   output[["pub-plot"]] <- renderPlotly({
-
+    
     main_layer <- if(input[["show_journals"]]) {
       geom_bar(aes(x = disc, fill = journal_list))
     } else {
       geom_bar(aes(x = disc))
     }
-
+    
     p <- ggplot(plot_df()) +
       main_layer +
       scale_x_discrete("Dyscyplina") +
@@ -101,7 +102,7 @@ shinyServer(function(input, output) {
       coord_flip() +
       theme_bw(base_size = 15) +
       theme(legend.position = "none")
-    
+    browser()
     ggplotly(p)
   })
   
@@ -113,16 +114,43 @@ shinyServer(function(input, output) {
   # dyscyplina na rok ------------------
   
   output[["disc-plot"]] <- renderPlot({
-    ggplot(pub_df(), aes(x = year)) +
+    filter(pub_df(), disc %in% input[["disc-select"]]) %>% 
+      ggplot(aes(x = year)) +
       geom_bar() +
       scale_x_continuous("Rok") +
       scale_y_continuous("Liczba publikacji") +
       theme_bw() +
       facet_wrap(~ disc, ncol = 2) +
       theme_bw(base_size = 15)
-
+    
   })
   
+  output[["disc-checkbox"]] <- renderUI({
+    
+    
+    disc_checbox <- list(tags[["div"]](align = 'left', 
+                                       class = 'multicol', 
+                                       checkboxGroupInput("disc-select", "Wybierz dyscypliny",
+                                                          choices = sort(unique(plot_df()[["disc"]])),
+                                                          selected = names(sort(table(plot_df()[["disc"]]), 
+                                                                                decreasing = TRUE))[1L:3]
+                                       )
+    ))
+    
+    
+    
+    fluidRow(column(width = 12, disc_checbox))
+  })
   
+  output[["disc-plot-panel"]] <- renderUI({
+    plotOutput("disc-plot", height = 400*floor(length(input[["disc-select"]])/2))
+  })
+  
+  observe({
+    isolate(
+      updateCheckboxGroupInput(session, inputId = "disc-select", 
+                               selected = input[["disc-select"]])
+    )
+  })
   
 })

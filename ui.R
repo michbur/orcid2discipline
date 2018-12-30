@@ -5,6 +5,19 @@ library(plotly)
 
 shinyUI(fluidPage(
   
+  # source: https://stackoverflow.com/questions/29738975/how-to-align-a-group-of-checkboxgroupinput-in-r-shiny/33108619#33108619
+  list(tags[["head"]](tags[["style"]](HTML("
+                                                     .multicol { 
+                                                     height: 350px;
+                                                     -webkit-column-count: 3; /* Chrome, Safari, Opera */ 
+                                                     -moz-column-count: 3;    /* Firefox */ 
+                                                     column-count: 3; 
+                                                     -moz-column-fill: auto;
+                                                     -column-fill: auto;
+                                                     } 
+                                                     ")) 
+  )),
+  
   titlePanel("Publikacje a dyscypliny"),
   
   sidebarLayout(
@@ -26,8 +39,9 @@ shinyUI(fluidPage(
                                value = FALSE),
                  uiOutput("pub-plot-panel") %>% withSpinner(color="#0dc5c1")
         ),
-        tabPanel("Publikacje w dyscyplinach",
-                 plotOutput("disc-plot", height = 2800)
+        tabPanel("Publikacje w dyscyplinach (rocznie)",
+                 uiOutput("disc-checkbox"),
+                 uiOutput("disc-plot-panel")
         )
       )
     )
