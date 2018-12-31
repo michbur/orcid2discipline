@@ -127,14 +127,26 @@ shinyServer(function(input, output, session) {
   
   output[["disc-checkbox"]] <- renderUI({
     
-    
     disc_checbox <- list(tags[["div"]](align = 'left', 
                                        class = 'multicol', 
                                        checkboxGroupInput("disc-select", "Wybierz dyscypliny",
-                                                          choices = sort(unique(plot_df()[["disc"]])),
-                                                          selected = names(sort(table(plot_df()[["disc"]]), 
-                                                                                decreasing = TRUE))[1L:3]
-                                       )
+                                                          choices = c(" archeologia", " architektura i urbanistyka", " astronomia", 
+                                                                      " automatyka, elektronika i elektrotechnika", " ekonomia i finanse", 
+                                                                      " filozofia", " geografia społeczno-ekonomiczna i gospodarka przestrzenna", 
+                                                                      " historia", " informatyka ", " informatyka techniczna i telekomunikacja", 
+                                                                      " inżynieria biomedyczna", " inżynieria chemiczna", " inżynieria lądowa i transport", 
+                                                                      " inżynieria materiałowa", " inżynieria mechaniczna", " inżynieria środowiska, górnictwo i energetyka", 
+                                                                      " językoznawstwo", " literaturoznawstwo", " matematyka", " nauki biologiczne", 
+                                                                      " nauki chemiczne", " nauki farmaceutyczne", " nauki fizyczne", 
+                                                                      " nauki leśne", " nauki medyczne", " nauki o bezpieczeństwie", 
+                                                                      " nauki o komunikacji społecznej i mediach", " nauki o kulturze fizycznej", 
+                                                                      " nauki o kulturze i religii", " nauki o polityce i administracji", 
+                                                                      " nauki o sztuce", " nauki o zarządzaniu i jakości", " nauki o zdrowiu", 
+                                                                      " nauki o Ziemi i środowisku", " nauki prawne", " nauki socjologiczne", 
+                                                                      " nauki teologiczne", " pedagogika", " prawo kanoniczne", " psychologia", 
+                                                                      " rolnictwo i ogrodnictwo", " technologia żywności i żywienia", 
+                                                                      " weterynaria", " zootechnika i rybactwo"),
+                                                          selected = " nauki socjologiczne")
     ))
     
     
@@ -143,14 +155,8 @@ shinyServer(function(input, output, session) {
   })
   
   output[["disc-plot-panel"]] <- renderUI({
-    plotOutput("disc-plot", height = 400*floor(length(input[["disc-select"]])/2))
+    plotOutput("disc-plot", height = 400*ceiling(length(input[["disc-select"]])/2))
   })
   
-  observe({
-    isolate(
-      updateCheckboxGroupInput(session, inputId = "disc-select", 
-                               selected = input[["disc-select"]])
-    )
-  })
   
 })
