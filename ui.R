@@ -30,6 +30,7 @@ shinyUI(fluidPage(
     mainPanel(
       tabsetPanel(
         tabPanel("Przypisanie czasopism", 
+                 includeMarkdown("./readmes/readme1.md"),
                  DT::dataTableOutput("pub-table") %>% withSpinner(color="#0dc5c1")
         ),
         #plotOutput("pub-plot", height = 1200)),
@@ -42,7 +43,9 @@ shinyUI(fluidPage(
         tabPanel("Publikacje w dyscyplinach (rocznie)",
                  uiOutput("disc-checkbox"),
                  uiOutput("disc-plot-panel")
-        )
+        ),
+        tabPanel("O narzędziu",
+                 includeMarkdown("readme.md"))
       )
     )
   )

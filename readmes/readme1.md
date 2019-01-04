@@ -1,0 +1,1 @@
+Nazwy periodyków z serwisów zewnętrznych (Google Scholar i ORCID) są automatycznie i nie zawsze prawidłowo przypisane przez narzędzie do periodyków z listy ministerialnej. Jakoś przypisania jest opisana w kolumnie "Dystans". Źle przypisane periodyki można usunąć z dalszych analiz poprzez wybranie ich wierszy z tabeli poniżej.

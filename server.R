@@ -102,7 +102,7 @@ shinyServer(function(input, output, session) {
       coord_flip() +
       theme_bw(base_size = 15) +
       theme(legend.position = "none")
-    browser()
+
     ggplotly(p)
   })
   
