@@ -11,19 +11,20 @@ journal_df <- read.csv("./data/journal-disc.csv")
 
 shinyServer(function(input, output, session) {
   
-  
-  pub_raw_df <- reactive({
-    scholar_dat <- if(input[["scholar_id"]] == "riuFKDkAAAAJ") {
+  pub_raw_data <- reactive({
+    if(input[["scholar_id"]] == "riuFKDkAAAAJ") {
       load("./data/michal_dat.RData")
-      michal_dat
+      raw_pub_dat <- michal_dat
+      raw_profile_dat <- michal_profile
     } else {
-      get_publications(input[["scholar_id"]], pagesize = 100)
+      raw_pub_dat <- get_publications(input[["scholar_id"]], pagesize = 100)
+      raw_profile_dat <- get_profile(input[["scholar_id"]])
     }
     
     #if(input[["scholar_id"]] != "riuFKDkAAAAJ")
     #  browser()
     
-    scholar_df <- scholar_dat %>% 
+    scholar_df <- raw_pub_dat %>% 
       select(title, journal, year) %>%
       unique() %>% 
       filter(journal != "") %>%
@@ -39,11 +40,14 @@ shinyServer(function(input, output, session) {
     all_distances <- stringdistmatrix(a = tolower(journal_vec), b = tolower(journal_all_vec),
                                       method = "jaccard", q = 5)
     
-    data.frame(journal_db = journal_vec, 
-               journal_list = journal_all_vec[apply(all_distances, 1, which.min)],
-               distance = apply(all_distances, 1, min)) %>% 
+    raw_pub_df <- data.frame(journal_db = journal_vec, 
+                      journal_list = journal_all_vec[apply(all_distances, 1, which.min)],
+                      distance = apply(all_distances, 1, min)) %>% 
       inner_join(scholar_df, ., by = c("journal_db" = "journal_db")) %>% 
       inner_join(journal_df, by = c("journal_list" = "journal"))
+    
+    list(pub = raw_pub_df,
+         profile = raw_profile_dat)
   })
   
   pub_df <- reactive({
@@ -53,13 +57,21 @@ shinyServer(function(input, output, session) {
       NULL
     }
     
-    filter(pub_raw_df(), !(journal_db %in% wrongly_annotated))
+    filter(pub_raw_data()[["pub"]], !(journal_db %in% wrongly_annotated))
+  })
+  
+  # nazwa profilu
+  
+  output[["researcher_name"]] <- renderUI({
+    p("Nazwa profilu: ", 
+      strong(paste0(pub_raw_data()[["profile"]][["name"]], ", ", pub_raw_data()[["profile"]][["affiliation"]])),
+      ".")
   })
   
   # Przypisanie czasopism ----------------------------------------
   
   pub_table_r <- reactive({
-    pub_raw_df() %>% 
+    pub_raw_data()[["pub"]] %>% 
       select(title, journal_db, journal_list, distance) %>% 
       unique() %>% 
       arrange(desc(distance))
@@ -155,7 +167,7 @@ shinyServer(function(input, output, session) {
   })
   
   output[["disc-plot-panel"]] <- renderUI({
-    plotOutput("disc-plot", height = 400*ceiling(length(input[["disc-select"]])/2))
+    plotOutput("disc-plot", height = 400*ceiling(length(ifelse(is.null(input[["disc-select"]]), 1, input[["disc-select"]]))/2))
   })
   
   
