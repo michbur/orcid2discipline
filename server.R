@@ -6,6 +6,8 @@ library(plotly)
 library(stringdist)
 
 httr::set_config(httr::config(http_version = 0))
+options(DT.options = list(language = list(url = "//cdn.datatables.net/plug-ins/1.10.19/i18n/Polish.json")))
+
 
 journal_df <- read.csv("./data/journal-disc.csv")
 
@@ -41,8 +43,8 @@ shinyServer(function(input, output, session) {
                                       method = "jaccard", q = 5)
     
     raw_pub_df <- data.frame(journal_db = journal_vec, 
-                      journal_list = journal_all_vec[apply(all_distances, 1, which.min)],
-                      distance = apply(all_distances, 1, min)) %>% 
+                             journal_list = journal_all_vec[apply(all_distances, 1, which.min)],
+                             distance = apply(all_distances, 1, min)) %>% 
       inner_join(scholar_df, ., by = c("journal_db" = "journal_db")) %>% 
       inner_join(journal_df, by = c("journal_list" = "journal"))
     
@@ -64,8 +66,8 @@ shinyServer(function(input, output, session) {
   
   output[["researcher_name"]] <- renderUI({
     p("Nazwa profilu: ", 
-      strong(paste0(pub_raw_data()[["profile"]][["name"]], ", ", pub_raw_data()[["profile"]][["affiliation"]])),
-      ".")
+      strong(paste0(pub_raw_data()[["profile"]][["name"]], ", ", pub_raw_data()[["profile"]][["affiliation"]]))
+    )
   })
   
   # Przypisanie czasopism ----------------------------------------
@@ -114,7 +116,7 @@ shinyServer(function(input, output, session) {
       coord_flip() +
       theme_bw(base_size = 15) +
       theme(legend.position = "none")
-
+    
     ggplotly(p)
   })
   
@@ -167,7 +169,7 @@ shinyServer(function(input, output, session) {
   })
   
   output[["disc-plot-panel"]] <- renderUI({
-    plotOutput("disc-plot", height = 400*ceiling(length(ifelse(is.null(input[["disc-select"]]), 1, input[["disc-select"]]))/2))
+    plotOutput("disc-plot", height = 400 + 400*floor(ifelse(is.null(input[["disc-select"]]), 1, length(input[["disc-select"]]))/2))
   })
   
   
